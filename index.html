@@ -180,6 +180,37 @@
   best = parseInt(localStorage.getItem('g2048_best')||'0',10);
   bestEl.textContent = best;
 
+  // ----- recorde na nuvem (Supabase) -----
+  const SB_URL = 'https://jlouesrrmqeauzlgvrpw.supabase.co';
+  const SB_KEY = 'sb_publishable_ulG1woVG1p1Seax63GGYPQ_PG6-8l-G';
+
+  function setBest(v){
+    if(v > best) best = v;
+    bestEl.textContent = best;
+    try{ localStorage.setItem('g2048_best', best); }catch(e){}
+  }
+
+  // Envia o recorde atual e recebe de volta o maior (merge "só aumenta" no servidor).
+  async function cloudBump(candidate){
+    try{
+      const res = await fetch(SB_URL + '/rest/v1/rpc/bump_highscore', {
+        method:'POST',
+        headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+        body: JSON.stringify({ p_game:'2048', p_score: candidate|0 })
+      });
+      if(!res.ok) return null;
+      const v = await res.json();
+      const n = (typeof v==='number') ? v : parseInt(Array.isArray(v)?v[0]:v, 10);
+      return Number.isFinite(n) ? n : null;
+    }catch(e){ return null; }
+  }
+
+  // Sincroniza: manda o melhor local e aplica o maior que voltar da nuvem.
+  async function syncBest(){
+    const cloud = await cloudBump(best);
+    if(cloud!=null) setBest(cloud);
+  }
+
   function emptyGrid(){ return Array.from({length:N},()=>Array(N).fill(null)); }
 
   function newGame(){
@@ -302,9 +333,8 @@
       scoreAddEl.style.animation='';
     }
     if(score>best){
-      best = score;
-      bestEl.textContent = best;
-      localStorage.setItem('g2048_best', best);
+      setBest(score);
+      cloudBump(best).then(c=>{ if(c!=null) setBest(c); });
     }
   }
 
@@ -482,10 +512,11 @@
   }
   drawBackground();
   render(true);
+  syncBest(); // puxa/mescla o recorde da nuvem ao abrir
 
   function updateScoreInit(){
     scoreEl.textContent = score;
-    if(score>best){ best=score; bestEl.textContent=best; localStorage.setItem('g2048_best',best); }
+    if(score>best) setBest(score);
   }
 })();
 </script>
