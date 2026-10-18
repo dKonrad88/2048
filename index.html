@@ -93,7 +93,7 @@
   @keyframes cardUp{from{transform:translateY(16px);opacity:.6}to{transform:translateY(0);opacity:1}}
   .modal-head{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:16px 18px;position:sticky;top:0;background:var(--bg);border-bottom:1px solid #eadfce;
+    padding:16px 18px;position:sticky;top:0;z-index:3;background:var(--bg);border-bottom:1px solid #eadfce;
   }
   .modal-head h3{font-size:19px;font-weight:800;color:#5c554e}
   .modal .x{background:transparent;color:var(--btn);font-size:16px;font-weight:800;padding:6px 11px;border-radius:8px}
@@ -108,6 +108,10 @@
     font-weight:800;font-size:14px;
   }
   .modal-body li b{color:#5c554e}
+  .modal-body .danger{margin-top:22px;padding-top:16px;border-top:1px solid #eadfce;text-align:center}
+  .danger-btn{background:#c0392b;color:#fff;width:100%;padding:12px;font-size:14px;font-weight:800}
+  .danger-btn:active{transform:scale(.97)}
+  .danger-note{font-size:12px;color:#8a7f73;margin-top:9px;line-height:1.45}
 </style>
 </head>
 <body>
@@ -161,6 +165,10 @@
         <li><b>Não persiga fusões longe do canto.</b> Seu foco é alimentar a peça grande; fusões soltas no lado errado atrapalham a escada.</li>
         <li><b>Desfaça com sabedoria.</b> O botão ↶ volta uma jogada — guarde pra quando um movimento te prejudicar de verdade.</li>
       </ol>
+      <div class="danger">
+        <button id="resetAll" class="danger-btn">↺ Zerar tudo e começar do zero</button>
+        <p class="danger-note">Apaga o jogo atual e o recorde (inclusive na nuvem). Não dá pra desfazer.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -209,6 +217,18 @@
   async function syncBest(){
     const cloud = await cloudBump(best);
     if(cloud!=null) setBest(cloud);
+  }
+
+  // Zera o recorde na nuvem (ignora o "só aumenta").
+  async function cloudReset(){
+    try{
+      await fetch(SB_URL + '/rest/v1/rpc/reset_highscore', {
+        method:'POST',
+        headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+        body: JSON.stringify({ p_game:'2048' })
+      });
+      return true;
+    }catch(e){ return false; }
   }
 
   function emptyGrid(){ return Array.from({length:N},()=>Array(N).fill(null)); }
@@ -498,6 +518,17 @@
   document.getElementById('tipsClose').addEventListener('click', closeTips);
   tipsModal.addEventListener('click', e=>{ if(e.target===tipsModal) closeTips(); });
   window.addEventListener('keydown', e=>{ if(e.key==='Escape') closeTips(); });
+
+  // zerar tudo (começar do zero)
+  document.getElementById('resetAll').addEventListener('click', async ()=>{
+    if(!confirm('Zerar tudo e começar do zero?\n\nIsso apaga o jogo atual e o recorde (inclusive na nuvem). Não dá pra desfazer.')) return;
+    await cloudReset();
+    try{ localStorage.removeItem('g2048_best'); localStorage.removeItem('g2048_state'); }catch(e){}
+    best = 0;
+    newGame();
+    setBest(0);
+    closeTips();
+  });
 
   window.addEventListener('resize', ()=>{ clearTimeout(window._rz); window._rz=setTimeout(relayout,80); });
 
