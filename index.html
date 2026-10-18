@@ -78,6 +78,36 @@
   .overlay.win{background:rgba(237,194,46,.5)}
   .overlay h2{font-size:clamp(34px,10vw,46px);font-weight:800}
   footer{font-size:12px;opacity:.6;text-align:center}
+  #tips{font-size:17px;line-height:1}
+  .modal{
+    position:fixed;inset:0;z-index:60;display:none;padding:16px;
+    align-items:center;justify-content:center;background:rgba(60,52,45,.5);
+  }
+  .modal.show{display:flex;animation:fadeIn .15s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal-card{
+    background:var(--bg);border-radius:14px;width:100%;max-width:420px;
+    max-height:86vh;max-height:86dvh;overflow:auto;box-shadow:0 14px 48px rgba(0,0,0,.35);
+    animation:cardUp .18s ease;
+  }
+  @keyframes cardUp{from{transform:translateY(16px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:16px 18px;position:sticky;top:0;background:var(--bg);border-bottom:1px solid #eadfce;
+  }
+  .modal-head h3{font-size:19px;font-weight:800;color:#5c554e}
+  .modal .x{background:transparent;color:var(--btn);font-size:16px;font-weight:800;padding:6px 11px;border-radius:8px}
+  .modal-body{padding:14px 18px 20px}
+  .modal-body .intro{font-size:14px;color:#8a7f73;line-height:1.5;margin-bottom:16px}
+  .modal-body .intro b{color:#5c554e}
+  .modal-body ol{list-style:none;counter-reset:t;display:flex;flex-direction:column;gap:13px}
+  .modal-body li{counter-increment:t;position:relative;padding-left:42px;font-size:14.5px;line-height:1.5;color:#6b625a}
+  .modal-body li::before{
+    content:counter(t);position:absolute;left:0;top:1px;width:28px;height:28px;border-radius:8px;
+    background:var(--btn);color:var(--btn-text);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px;
+  }
+  .modal-body li b{color:#5c554e}
 </style>
 </head>
 <body>
@@ -93,6 +123,7 @@
   <div class="bar">
     <p>Junte os números até chegar no <b>2048!</b></p>
     <div class="btns">
+      <button class="ghost" id="tips" title="Dicas de como jogar bem" aria-label="Dicas">⚙</button>
       <button class="ghost" id="undo" title="Desfazer">↶</button>
       <button id="newgame">Novo jogo</button>
     </div>
@@ -110,6 +141,28 @@
   </div>
 
   <footer>Setas / WASD no teclado &nbsp;•&nbsp; Deslize o dedo no celular</footer>
+</div>
+
+<div class="modal" id="tipsModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>💡 Como jogar bem</h3>
+      <button class="x" id="tipsClose" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="intro">O segredo do 2048 é ter <b>paciência</b> e <b>disciplina</b>: siga poucas regras sempre, em vez de reagir a cada peça.</p>
+      <ol>
+        <li><b>Escolha um canto e nunca saia dele.</b> Mantenha sua maior peça sempre no mesmo canto (ex.: inferior-esquerdo). É em volta dela que tudo se organiza.</li>
+        <li><b>Use só duas direções.</b> Jogue quase sempre nas duas que empurram pro seu canto (ex.: ← e ↓). Assim a peça grande fica ancorada.</li>
+        <li><b>Evite a direção que tira do canto.</b> No exemplo acima, o ↑ é o vilão: só use em último caso, pois ele bagunça a organização toda.</li>
+        <li><b>Monte uma escada decrescente.</b> Na linha do canto, deixe os números em ordem (…256, 128, 64, 32). Aí eles fundem em cadeia, um puxando o outro.</li>
+        <li><b>Mantenha o tabuleiro vazio.</b> Quanto mais casas livres, mais fôlego. Funda as peças pequenas sempre que puder.</li>
+        <li><b>Pense antes de deslizar.</b> Toda jogada que mexe em algo faz nascer uma peça nova — não encha o tabuleiro à toa.</li>
+        <li><b>Não persiga fusões longe do canto.</b> Seu foco é alimentar a peça grande; fusões soltas no lado errado atrapalham a escada.</li>
+        <li><b>Desfaça com sabedoria.</b> O botão ↶ volta uma jogada — guarde pra quando um movimento te prejudicar de verdade.</li>
+      </ol>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -406,6 +459,15 @@
   document.getElementById('retry').addEventListener('click', newGame);
   document.getElementById('undo').addEventListener('click', undo);
   document.getElementById('keepgoing').addEventListener('click', ()=>{ over=false; hideOverlay(); });
+
+  // dicas (botão ⚙)
+  const tipsModal = document.getElementById('tipsModal');
+  function openTips(){ tipsModal.classList.add('show'); }
+  function closeTips(){ tipsModal.classList.remove('show'); }
+  document.getElementById('tips').addEventListener('click', openTips);
+  document.getElementById('tipsClose').addEventListener('click', closeTips);
+  tipsModal.addEventListener('click', e=>{ if(e.target===tipsModal) closeTips(); });
+  window.addEventListener('keydown', e=>{ if(e.key==='Escape') closeTips(); });
 
   window.addEventListener('resize', ()=>{ clearTimeout(window._rz); window._rz=setTimeout(relayout,80); });
 
